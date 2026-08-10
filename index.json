@@ -1,0 +1,23 @@
+{
+  "example-hello": {
+    "name": "????",
+    "description": "???????????????",
+    "labels": [
+      "??"
+    ],
+    "version": "1.0.0",
+    "icon": "",
+    "author": "leafss1022",
+    "min_app_version": "0.8.0",
+    "api_range": {
+      "min": 1,
+      "max": 1
+    },
+    "history": {
+      "v1.0.0": "????"
+    },
+    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-example-hello-1.0.0/example-hello-1.0.0.zip",
+    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-example-hello-1.0.0/manifest.json",
+    "sig_url": ""
+  }
+}
