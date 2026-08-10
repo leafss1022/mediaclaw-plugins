@@ -5,19 +5,42 @@
     "labels": [
       "??"
     ],
-    "version": "1.0.0",
+    "version": "1.0.1",
     "icon": "",
     "author": "leafss1022",
     "min_app_version": "0.8.0",
     "api_range": {
       "min": 1,
-      "max": 1
+      "max": 2
     },
     "history": {
+      "v1.0.1": "?????? API v2",
       "v1.0.0": "????"
     },
-    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-example-hello-1.0.0/example-hello-1.0.0.zip",
-    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-example-hello-1.0.0/manifest.json",
+    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-example-hello-1.0.1/example-hello-1.0.1.zip",
+    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-example-hello-1.0.1/manifest.json",
+    "sig_url": ""
+  },
+  "douban-coming-notice": {
+    "name": "???????",
+    "description": "?????????????????????????????????",
+    "labels": [
+      "??",
+      "??"
+    ],
+    "version": "1.0.0",
+    "icon": "",
+    "author": "luanyi143",
+    "min_app_version": "0.8.1",
+    "api_range": {
+      "min": 2,
+      "max": 2
+    },
+    "history": {
+      "v1.0.0": "??? luanyi143/MoviePilot-Plugins"
+    },
+    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-douban-coming-notice-1.0.0/douban-coming-notice-1.0.0.zip",
+    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-douban-coming-notice-1.0.0/manifest.json",
     "sig_url": ""
   }
 }
