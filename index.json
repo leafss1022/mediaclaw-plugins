@@ -5,20 +5,21 @@
     "labels": [
       "??"
     ],
-    "version": "1.0.1",
+    "version": "1.0.2",
     "icon": "",
     "author": "leafss1022",
     "min_app_version": "0.8.0",
     "api_range": {
       "min": 1,
-      "max": 2
+      "max": 3
     },
     "history": {
+      "v1.0.2": "?????? API v3",
       "v1.0.1": "?????? API v2",
       "v1.0.0": "????"
     },
-    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-example-hello-1.0.1/example-hello-1.0.1.zip",
-    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-example-hello-1.0.1/manifest.json",
+    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-example-hello-1.0.2/example-hello-1.0.2.zip",
+    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-example-hello-1.0.2/manifest.json",
     "sig_url": ""
   },
   "douban-coming-notice": {
@@ -28,19 +29,20 @@
       "??",
       "??"
     ],
-    "version": "1.0.0",
+    "version": "1.0.1",
     "icon": "",
     "author": "luanyi143",
-    "min_app_version": "0.8.1",
+    "min_app_version": "0.8.3",
     "api_range": {
-      "min": 2,
-      "max": 2
+      "min": 3,
+      "max": 3
     },
     "history": {
+      "v1.0.1": "??????????webui.panel?",
       "v1.0.0": "??? luanyi143/MoviePilot-Plugins"
     },
-    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-douban-coming-notice-1.0.0/douban-coming-notice-1.0.0.zip",
-    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-douban-coming-notice-1.0.0/manifest.json",
+    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-douban-coming-notice-1.0.1/douban-coming-notice-1.0.1.zip",
+    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-douban-coming-notice-1.0.1/manifest.json",
     "sig_url": ""
   }
 }

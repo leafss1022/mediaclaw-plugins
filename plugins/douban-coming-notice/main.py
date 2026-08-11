@@ -33,6 +33,46 @@ class DoubanComingNotice(PluginBase):
             cron=cron,
         )
 
+    def page(self) -> dict | None:
+        """历史记录卡片墙（原版 get_page 的数据结构）。"""
+        if self.host is None:
+            return None
+        history = self.host.data.read_json("history") or []
+        cards = []
+        for h in history:
+            douban_id = h.get("douban_id")
+            cards.append(
+                {
+                    "unique": h.get("unique"),
+                    "title": h.get("title"),
+                    "douban_id": douban_id,
+                    "douban_url": (
+                        f"https://movie.douban.com/subject/{douban_id}/"
+                        if douban_id
+                        else None
+                    ),
+                    "type": "电视剧",
+                    "time": h.get("time"),
+                    "wish_count": h.get("wish_count"),
+                    "air_date": h.get("air_date"),
+                    "genres": h.get("genres") or [],
+                    "subscribed": bool(h.get("subscribed")),
+                    "notified": bool(h.get("air_notify_sent")),
+                }
+            )
+        return {"cards": cards}
+
+    def delete_page_item(self, key: str) -> bool:
+        """删除一条历史记录。"""
+        if self.host is None:
+            return False
+        history = self.host.data.read_json("history") or []
+        kept = [h for h in history if h.get("unique") != key]
+        if len(kept) == len(history):
+            return False
+        self.host.data.write_json("history", kept)
+        return True
+
     async def refresh(self) -> None:
         if self.host is None:
             return
@@ -110,6 +150,7 @@ class DoubanComingNotice(PluginBase):
         unique = f"doubancomingnotice: {title} (DB:{raw.get('douban_id')})"
         history_item = next((h for h in history if h.get("unique") == unique), None)
         subscribed = bool(history_item.get("subscribed")) if history_item else False
+        air_notified = False
 
         if (
             not subscribed
@@ -144,6 +185,7 @@ class DoubanComingNotice(PluginBase):
                     notify_history.append(
                         {"unique": notify_key, "title": media["title"], "notified_at": now}
                     )
+                    air_notified = True
                 except Exception as exc:
                     self.host.logger.warning("开播提醒发送失败 %s：%s", title, exc)
 
@@ -154,6 +196,7 @@ class DoubanComingNotice(PluginBase):
             "wish_count": wish_count,
             "air_date": air_date,
             "subscribed": subscribed,
+            "air_notify_sent": air_notified,
             "time": now,
         }
         if history_item is None:
