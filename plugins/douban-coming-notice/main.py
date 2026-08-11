@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import datetime
 import re
 import xml.etree.ElementTree as ET
@@ -32,6 +33,13 @@ class DoubanComingNotice(PluginBase):
             trigger_type="cron",
             cron=cron,
         )
+        if cfg.get("only_once"):
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(self.refresh())
+                self.host.logger.info("立即运行一次：豆瓣将映刷新已触发")
+            except RuntimeError:
+                pass
 
     def page(self) -> dict | None:
         """历史记录卡片墙（原版 get_page 的数据结构）。"""
@@ -56,6 +64,7 @@ class DoubanComingNotice(PluginBase):
                     "wish_count": h.get("wish_count"),
                     "air_date": h.get("air_date"),
                     "genres": h.get("genres") or [],
+                    "poster_url": h.get("poster_url"),
                     "subscribed": bool(h.get("subscribed")),
                     "notified": bool(h.get("air_notify_sent")),
                 }
@@ -143,6 +152,9 @@ class DoubanComingNotice(PluginBase):
         if not media:
             self.host.logger.info("%s 未收敛到 TMDB，跳过", title)
             return
+        poster_url = None
+        if media.get("poster_path"):
+            poster_url = f"https://image.tmdb.org/t/p/w500{media['poster_path']}"
         season = int(raw.get("season") or 1)
         air_date = await self.host.media.tv_air_date(media["tmdb_id"], season=season)
         days = self._days_until(air_date)
@@ -195,6 +207,8 @@ class DoubanComingNotice(PluginBase):
             "douban_id": raw.get("douban_id"),
             "wish_count": wish_count,
             "air_date": air_date,
+            "genres": media.get("genres") or [],
+            "poster_url": poster_url,
             "subscribed": subscribed,
             "air_notify_sent": air_notified,
             "time": now,
