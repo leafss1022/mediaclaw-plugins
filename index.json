@@ -21,10 +21,10 @@
     "sig_url": ""
   },
   "douban-coming-notice": {
-    "name": "豆瓣将映魔改版",
-    "description": "监控豆瓣即将开播电视剧，想看人数达阈值自动建订阅，开播前发送提醒。",
+    "name": "???????",
+    "description": "?????????????????????????????????",
     "labels": [],
-    "version": "1.0.2",
+    "version": "1.0.3",
     "icon": "",
     "author": "luanyi143",
     "min_app_version": "0.8.1",
@@ -33,12 +33,13 @@
       "max": 3
     },
     "history": {
-      "v1.0.2": "卡片墙补全海报与分类（host.media 返回 TMDB 详情）",
-      "v1.0.1": "新增历史记录卡片页（webui.panel）",
-      "v1.0.0": "移植自 luanyi143/MoviePilot-Plugins"
+      "v1.0.3": "??????????????????????????????/???",
+      "v1.0.2": "???????????host.media ?? TMDB ???",
+      "v1.0.1": "??????????webui.panel?",
+      "v1.0.0": "??? luanyi143/MoviePilot-Plugins"
     },
-    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-douban-coming-notice-1.0.2/douban-coming-notice-1.0.2.zip",
-    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-douban-coming-notice-1.0.2/manifest.json",
+    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-douban-coming-notice-1.0.3/douban-coming-notice-1.0.3.zip",
+    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-douban-coming-notice-1.0.3/douban-coming-notice-1.0.3-manifest.json",
     "sig_url": ""
   }
 }
