@@ -1,13 +1,11 @@
 {
   "example-hello": {
-    "name": "????",
-    "description": "???????????????",
-    "labels": [
-      "??"
-    ],
+    "name": "示例插件",
+    "description": "插件模板：安装后打印一行日志。",
+    "labels": [],
     "version": "1.0.2",
     "icon": "",
-    "author": "leafss1022",
+    "author": "你的名字",
     "min_app_version": "0.8.0",
     "api_range": {
       "min": 1,
@@ -23,16 +21,13 @@
     "sig_url": ""
   },
   "douban-coming-notice": {
-    "name": "???????",
-    "description": "?????????????????????????????????",
-    "labels": [
-      "??",
-      "??"
-    ],
+    "name": "豆瓣将映魔改版",
+    "description": "监控豆瓣即将开播电视剧，想看人数达阈值自动建订阅，开播前发送提醒。",
+    "labels": [],
     "version": "1.0.1",
     "icon": "",
     "author": "luanyi143",
-    "min_app_version": "0.8.3",
+    "min_app_version": "0.8.1",
     "api_range": {
       "min": 3,
       "max": 3
