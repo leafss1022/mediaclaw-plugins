@@ -1,22 +1,32 @@
 {
   "id": "douban-coming-notice",
   "name": "豆瓣将映魔改版",
-  "description": "监控豆瓣即将开播电视剧，想看人数达阈值自动建订阅，开播前发送提醒。",
+  "description": "监控豆瓣即将开播电视剧，开播前发送提醒，临近开播自动建订阅。",
   "author": "luanyi143",
   "license": "MIT",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "category": "subscription",
   "min_app_version": "0.8.1",
-  "api_range": {"min": 3, "max": 3},
+  "api_range": {
+    "min": 3,
+    "max": 3
+  },
   "history": {
+    "v1.0.4": "修复抓取：改用豆瓣剧集-即将播出路由，兼容「想看：」字段格式，标题去除季后缀识别，支持中文季号；剧集源无想看人数时不再被阈值误拦",
+    "v1.0.3": "适配宿主 0.10.x：卡片墙海报/分类（host.media 返回 TMDB 详情）",
     "v1.0.2": "卡片墙补全海报与分类（host.media 返回 TMDB 详情）",
     "v1.0.1": "新增历史记录卡片页（webui.panel）",
     "v1.0.0": "移植自 luanyi143/MoviePilot-Plugins"
   },
-  "extension_points": ["scheduler.task", "webui.panel"],
+  "extension_points": [
+    "scheduler.task",
+    "webui.panel"
+  ],
   "permissions": {
     "scheduler": true,
-    "network": ["*"],
+    "network": [
+      "*"
+    ],
     "media": true,
     "subscription": true,
     "library": true,
@@ -25,15 +35,50 @@
   "settings": {
     "type": "object",
     "properties": {
-      "rsshub": {"type": "string", "default": "https://rsshub.ddsrem.com", "title": "RSSHub 地址"},
-      "sort_by": {"type": "string", "enum": ["hot", "time"], "default": "hot", "title": "排序方式"},
-      "count": {"type": "integer", "default": 10, "title": "请求数量"},
-      "wish_count_threshold": {"type": "integer", "default": 5000, "title": "想看人数阈值"},
-      "advance_days": {"type": "integer", "default": 7, "title": "提前订阅天数"},
-      "notify_before_air": {"type": "boolean", "default": true, "title": "开播前提醒"},
-      "only_once": {"type": "boolean", "default": false, "title": "立即运行一次"},
-      "notify_hours": {"type": "integer", "default": 24, "title": "提醒提前小时数"},
-      "cron": {"type": "string", "default": "0 8 * * *", "title": "执行周期（cron）"}
+      "rsshub": {
+        "type": "string",
+        "default": "https://rsshub.ddsrem.com",
+        "title": "RSSHub 地址"
+      },
+      "sort_by": {
+        "type": "string",
+        "enum": [
+          "hot",
+          "time"
+        ],
+        "default": "hot",
+        "title": "排序方式"
+      },
+      "count": {
+        "type": "integer",
+        "default": 10,
+        "title": "请求数量"
+      },
+      "wish_count_threshold": {
+        "type": "integer",
+        "default": 5000,
+        "title": "想看人数阈值"
+      },
+      "advance_days": {
+        "type": "integer",
+        "default": 7,
+        "title": "提前订阅天数"
+      },
+      "notify_before_air": {
+        "type": "boolean",
+        "default": true,
+        "title": "开播前提醒"
+      },
+      "notify_hours": {
+        "type": "integer",
+        "default": 24,
+        "title": "提醒提前小时数"
+      },
+      "cron": {
+        "type": "string",
+        "default": "0 8 * * *",
+        "title": "执行周期（cron）"
+      }
     }
   }
 }
