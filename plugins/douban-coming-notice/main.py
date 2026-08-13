@@ -17,7 +17,26 @@ from mediaclaw_plugins.sdk import PluginBase
 _DOUBAN_ID_RE = re.compile(r"/subject/(\d+)")
 _WISH_RE = re.compile(r"想看人数[：:\s]*([\d,]+)")
 _YEAR_RE = re.compile(r"\((\d{4})\)")
-_SEASON_RE = re.compile(r"[Ss](\d{1,2})")
+_SEASON_RE = re.compile(r"(?:第\s*([一二三四五六七八九十百\d]+)\s*季|[Ss](\d{1,2}))")
+
+
+_CN_NUM = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
+
+
+def _cn_to_int(value: str) -> int:
+    """中文数字 -> int（支持一到十及十位数）。"""
+    value = value.strip()
+    if value.isdigit():
+        return int(value)
+    if value in _CN_NUM:
+        return _CN_NUM[value]
+    if value.endswith("十"):
+        head = value[:-1]
+        return 10 * _CN_NUM.get(head, 1) if head else 10
+    if "十" in value:
+        head, tail = value.split("十", 1)
+        return 10 * _CN_NUM.get(head, 1) + _CN_NUM.get(tail, 0)
+    return 1
 
 
 class DoubanComingNotice(PluginBase):
@@ -96,7 +115,7 @@ class DoubanComingNotice(PluginBase):
 
         try:
             resp = await self.host.http.get(
-                f"{rsshub}/douban/movie/coming?sort={sort_by}"
+                f"{rsshub}/douban/tv/coming?sort={sort_by}"
             )
             items = self._parse_rss(resp.text)
         except Exception as exc:
@@ -141,7 +160,7 @@ class DoubanComingNotice(PluginBase):
         if not title:
             return
         wish_count = int(raw.get("wish_count") or 0)
-        if wish_count < threshold:
+        if wish_count > 0 and wish_count < threshold:
             self.host.logger.info(
                 "%s 想看人数 %s 低于阈值 %s，跳过", title, wish_count, threshold
             )
@@ -219,12 +238,53 @@ class DoubanComingNotice(PluginBase):
             history_item.update(entry)
 
     def _parse_rss(self, xml_text: str) -> list[dict]:
-        """解析 RSSHub 的豆瓣即将上映 RSS，抽取标题/豆瓣ID/想看人数/年份/季号。"""
+        """解析 RSSHub 的豆瓣即将播出 RSS，抽取标题/豆瓣ID/想看人数/年份/季号。
+
+        RSSHub 字段格式不稳定：想看人数可能是「想看人数：」或「想看：」；
+        剧集标题多为「剧名 第X季」（中文季），识别时需去掉季后缀。
+        """
         items: list[dict] = []
         try:
             root = ET.fromstring(xml_text)
         except ET.ParseError:
             return items
+        for node in root.iter("item"):
+            title = node.findtext("title") or ""
+            link = node.findtext("link") or node.findtext("guid") or ""
+            description = node.findtext("description") or ""
+            douban_match = _DOUBAN_ID_RE.search(link)
+            wish_match = _WISH_RE.search(description)
+            year_match = _YEAR_RE.search(title)
+            season_match = _SEASON_RE.search(title)
+            wish_count = 0
+            if wish_match:
+                try:
+                    wish_count = int(wish_match.group(1).replace(",", ""))
+                except ValueError:
+                    wish_count = 0
+            season = 1
+            if season_match:
+                if season_match.group(1):
+                    season = _cn_to_int(season_match.group(1))
+                elif season_match.group(2):
+                    try:
+                        season = int(season_match.group(2))
+                    except ValueError:
+                        season = 1
+            # 识别用基础标题：去掉「第X季」/「Sxx」后缀，避免 TMDB 搜索带季名
+            base_title = _SEASON_RE.sub("", title).strip()
+            items.append(
+                {
+                    "title": base_title or title.strip(),
+                    "original_title": title.strip(),
+                    "douban_id": douban_match.group(1) if douban_match else None,
+                    "description": description,
+                    "wish_count": wish_count,
+                    "year": int(year_match.group(1)) if year_match else None,
+                    "season": season,
+                }
+            )
+        return items
         for node in root.iter("item"):
             title = node.findtext("title") or ""
             link = node.findtext("link") or node.findtext("guid") or ""
