@@ -1,25 +1,4 @@
 {
-  "example-hello": {
-    "name": "示例插件",
-    "description": "插件模板：安装后打印一行日志。",
-    "labels": [],
-    "version": "1.0.2",
-    "icon": "",
-    "author": "你的名字",
-    "min_app_version": "0.8.0",
-    "api_range": {
-      "min": 1,
-      "max": 3
-    },
-    "history": {
-      "v1.0.2": "兼容宿主插件 API v3",
-      "v1.0.1": "兼容宿主插件 API v2",
-      "v1.0.0": "首个版本"
-    },
-    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-example-hello-1.0.2/example-hello-1.0.2.zip",
-    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-example-hello-1.0.2/manifest.json",
-    "sig_url": ""
-  },
   "douban-coming-notice": {
     "name": "豆瓣将映魔改版",
     "description": "监控豆瓣即将开播电视剧，开播前发送提醒，临近开播自动建订阅。",
