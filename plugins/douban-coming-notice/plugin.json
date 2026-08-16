@@ -6,6 +6,7 @@
   "license": "MIT",
   "version": "1.0.4",
   "category": "subscription",
+  "entry": "main.py",
   "min_app_version": "0.8.1",
   "api_range": {
     "min": 3,
