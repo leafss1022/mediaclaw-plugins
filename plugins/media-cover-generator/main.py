@@ -19,11 +19,13 @@ STYLE_LABELS = {
     "static_4": "风格 4 · 玻璃标题",
 }
 
+ANIMATION_FORMATS = {"gif", "webp"}
+
 STYLE_PREVIEWS = {
-    "static_1": "https://raw.githubusercontent.com/wio-ki/MoviePilot-Plugins/main/images/style_1.jpeg",
-    "static_2": "https://raw.githubusercontent.com/wio-ki/MoviePilot-Plugins/main/images/style_2.jpeg",
-    "static_3": "https://raw.githubusercontent.com/wio-ki/MoviePilot-Plugins/main/images/style_3.jpeg",
-    "static_4": "https://raw.githubusercontent.com/wio-ki/MoviePilot-Plugins/main/images/style_4.jpeg",
+    "static_1": "/plugin-assets/media-cover-generator/style_1.jpeg",
+    "static_2": "/plugin-assets/media-cover-generator/style_2.jpeg",
+    "static_3": "/plugin-assets/media-cover-generator/style_3.jpeg",
+    "static_4": "/plugin-assets/media-cover-generator/style_4.jpeg",
 }
 
 
@@ -57,9 +59,7 @@ class MediaCoverGenerator(PluginBase):
             library_id = 0
         if not include_libraries and library_id:
             include_libraries = {library_id}
-        style = self._normalise_style(
-            str(config.get("cover_style") or config.get("cover_style_base") or config.get("style") or "static_1")
-        )
+        style = self._configured_style(config)
 
         try:
             libraries = await self.host.library.list_libraries()
@@ -87,7 +87,7 @@ class MediaCoverGenerator(PluginBase):
             current_id = int(library["id"])
             try:
                 result = await self.host.library.generate_library_cover(
-                    current_id, style=style
+                    current_id, style=style, apply=True
                 )
             except Exception as exc:
                 self.host.logger.error(
@@ -108,7 +108,7 @@ class MediaCoverGenerator(PluginBase):
                 "title": library.get("name") or f"媒体库 {current_id}",
                 "library_id": current_id,
                 "style": style,
-                "style_label": STYLE_LABELS.get(style, style),
+                "style_label": self._style_label(style),
                 "type": "媒体库",
                 "time": now,
                 "poster_url": result.get("cover_url"),
@@ -156,9 +156,7 @@ class MediaCoverGenerator(PluginBase):
         if not isinstance(summary, dict):
             summary = {}
 
-        style = self._normalise_style(
-            str(config.get("cover_style") or config.get("cover_style_base") or config.get("style") or summary.get("style") or "static_1")
-        )
+        style = self._configured_style(config, fallback=str(summary.get("style") or "static_1"))
         cron = str(config.get("cron") or "0 6 * * *")
         try:
             library_id = int(config.get("library_id") or 0)
@@ -180,7 +178,7 @@ class MediaCoverGenerator(PluginBase):
                     "封面风格",
                     "参考 MoviePilot 的静态风格卡片；实际生成使用 Mediaclaw 最近入库的本地海报。",
                 ),
-                {"component": "VRow", "content": self._style_cards(style)},
+                {"component": "VRow", "content": self._style_cards(self._base_style(style))},
                 self._section_title("最近生成", "只展示最近 12 张，避免打开插件页时加载过慢。"),
                 self._history_grid(recent),
             ]
@@ -223,10 +221,40 @@ class MediaCoverGenerator(PluginBase):
         except (TypeError, ValueError):
             return default
         return parsed if parsed > 0 else default
+    @classmethod
+    def _configured_style(cls, config: dict, fallback: str = "static_1") -> str:
+        """把“静态/动态 + 四种基础风格 + 输出格式”合成宿主可生成的样式名。"""
+        base = cls._normalise_style(
+            str(config.get("cover_style") or config.get("cover_style_base") or config.get("style") or fallback)
+        )
+        if str(config.get("cover_style_variant") or "static") != "animated":
+            return base
+        fmt = str(config.get("animation_format") or "gif").lower()
+        if fmt not in ANIMATION_FORMATS:
+            fmt = "gif"
+        return f"animated_{base.rsplit('_', 1)[-1]}_{fmt}"
+
     @staticmethod
     def _normalise_style(style: str) -> str:
         """限制封面样式，避免页面和任务写入未知风格。"""
         return style if style in STYLE_LABELS else "static_1"
+
+    @staticmethod
+    def _base_style(style: str) -> str:
+        if style.startswith("animated_"):
+            parts = style.split("_")
+            if len(parts) >= 2:
+                return f"static_{parts[1]}"
+        return style
+
+    @staticmethod
+    def _style_label(style: str) -> str:
+        if style.startswith("animated_"):
+            parts = style.split("_")
+            if len(parts) == 3:
+                base = f"static_{parts[1]}"
+                return f"{STYLE_LABELS.get(base, base)} · 动态 {parts[2].upper()}"
+        return STYLE_LABELS.get(style, style)
 
     @staticmethod
     def _hero_alert() -> dict:
@@ -246,8 +274,9 @@ class MediaCoverGenerator(PluginBase):
             "props": {"variant": "flat", "title": title, "subtitle": subtitle},
         }
 
-    @staticmethod
+    @classmethod
     def _summary_row(
+        cls,
         *,
         style: str,
         cron: str,
@@ -262,7 +291,7 @@ class MediaCoverGenerator(PluginBase):
         result_text = "-" if generated is None else f"生成 {generated} / 跳过 {skipped or 0}"
         cards = [
             ("目标媒体库", library_label, f"历史记录 {history_count} 条"),
-            ("当前风格", STYLE_LABELS.get(style, style), result_text),
+            ("当前风格", cls._style_label(style), result_text),
             ("执行周期", cron, f"上次运行：{last_time}"),
         ]
         return {
@@ -372,7 +401,7 @@ class MediaCoverGenerator(PluginBase):
                                         {"component": "VCardTitle", "text": item.get("title")},
                                         {
                                             "component": "VText",
-                                            "text": f"{item.get('style_label') or item.get('style') or '-'} · {item.get('time') or '-'}",
+                                            "text": f"{item.get('style_label') or self._style_label(str(item.get('style') or ''))} · {item.get('time') or '-'}",
                                         },
                                         {
                                             "component": "VChip",

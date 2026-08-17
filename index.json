@@ -29,19 +29,20 @@
       "工具",
       "媒体库"
     ],
-    "version": "0.1.0",
+    "version": "0.1.1",
     "icon": "",
     "author": "Mediaclaw",
-    "min_app_version": "0.13.0",
+    "min_app_version": "0.13.1-beta.2",
     "api_range": {
       "min": 3,
       "max": 3
     },
     "history": {
-      "v0.1.0": "新增媒体库封面生成插件：支持按媒体库生成横向封面、定时刷新、立即更新和历史封面展示。"
+      "v0.1.0": "新增媒体库封面生成插件：支持按媒体库生成横向封面、定时刷新、立即更新和历史封面展示。",
+      "v0.1.1": "修复媒体库封面未应用、中文标题方块和错误示例图；新增静态/动态 GIF、WebP 封面生成支持。"
     },
-    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-media-cover-generator-0.1.0/media-cover-generator-0.1.0.zip",
-    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-media-cover-generator-0.1.0/media-cover-generator-0.1.0-manifest.json",
+    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-media-cover-generator-0.1.1/media-cover-generator-0.1.1.zip",
+    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-media-cover-generator-0.1.1/media-cover-generator-0.1.1-manifest.json",
     "sig_url": ""
   }
 }
