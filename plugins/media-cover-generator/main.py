@@ -11,7 +11,6 @@ import datetime
 
 from mediaclaw_plugins.sdk import PluginBase
 
-
 STYLE_LABELS = {
     "static_1": "风格 1 · 经典拼贴",
     "static_2": "风格 2 · 斜切层叠",
@@ -221,12 +220,17 @@ class MediaCoverGenerator(PluginBase):
         except (TypeError, ValueError):
             return default
         return parsed if parsed > 0 else default
+
     @classmethod
     def _configured_style(cls, config: dict, fallback: str = "static_1") -> str:
         """把“静态/动态 + 四种基础风格 + 输出格式”合成宿主可生成的样式名。"""
-        base = cls._normalise_style(
-            str(config.get("cover_style") or config.get("cover_style_base") or config.get("style") or fallback)
+        style_value = (
+            config.get("cover_style")
+            or config.get("cover_style_base")
+            or config.get("style")
+            or fallback
         )
+        base = cls._normalise_style(str(style_value))
         if str(config.get("cover_style_variant") or "static") != "animated":
             return base
         fmt = str(config.get("animation_format") or "gif").lower()
@@ -263,7 +267,10 @@ class MediaCoverGenerator(PluginBase):
             "props": {
                 "type": "info",
                 "title": "媒体库封面生成",
-                "text": "按媒体库最近入库的本地海报生成横向封面。配置保存后可点右上角“立即运行”预览效果。",
+                "text": (
+                    "按媒体库最近入库的本地海报生成横向封面。"
+                    "配置保存后可点右上角“立即运行”预览效果。"
+                ),
             },
         }
 
@@ -351,7 +358,11 @@ class MediaCoverGenerator(PluginBase):
                                         {
                                             "component": "VChip",
                                             "props": {
-                                                "text": "当前使用" if selected else "可在配置中选择",
+                                                "text": (
+                                                    "当前使用"
+                                                    if selected
+                                                    else "可在配置中选择"
+                                                ),
                                                 "color": "success" if selected else "default",
                                             },
                                         },
@@ -364,15 +375,18 @@ class MediaCoverGenerator(PluginBase):
             )
         return cards
 
-    @staticmethod
-    def _history_grid(items: list[dict]) -> dict:
+    @classmethod
+    def _history_grid(cls, items: list[dict]) -> dict:
         if not items:
             return {
                 "component": "VAlert",
                 "props": {
                     "type": "warning",
                     "title": "暂无生成记录",
-                    "text": "本地还没有可展示的媒体库封面。确认媒体库已入库并有本地海报后，点击“立即运行”。",
+                    "text": (
+                        "本地还没有可展示的媒体库封面。"
+                        "确认媒体库已入库并有本地海报后，点击“立即运行”。"
+                    ),
                 },
             }
         return {
@@ -398,15 +412,25 @@ class MediaCoverGenerator(PluginBase):
                                 {
                                     "component": "VCardText",
                                     "content": [
-                                        {"component": "VCardTitle", "text": item.get("title")},
+                                        {
+                                            "component": "VCardTitle",
+                                            "text": item.get("title"),
+                                        },
                                         {
                                             "component": "VText",
-                                            "text": f"{item.get('style_label') or self._style_label(str(item.get('style') or ''))} · {item.get('time') or '-'}",
+                                            "text": (
+                                                item.get("style_label")
+                                                or cls._style_label(str(item.get("style") or ""))
+                                            )
+                                            + f" · {item.get('time') or '-'}",
                                         },
                                         {
                                             "component": "VChip",
                                             "props": {
-                                                "text": f"媒体库 #{item.get('library_id')} · {item.get('item_count', 0)} 部",
+                                                "text": (
+                                                    f"媒体库 #{item.get('library_id')}"
+                                                    f" · {item.get('item_count', 0)} 部"
+                                                ),
                                             },
                                         },
                                     ],
