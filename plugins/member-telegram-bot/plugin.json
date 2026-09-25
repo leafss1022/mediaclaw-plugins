@@ -1,0 +1,52 @@
+{
+  "id": "member-telegram-bot",
+  "name": "会员 Telegram 机器人",
+  "description": "让已授权成员在 Telegram 中搜索影视、创建订阅并查询处理进度。",
+  "author": "MediaClaw",
+  "license": "MIT",
+  "version": "1.0.0",
+  "entry": "main.py",
+  "category": "channel",
+  "icon": null,
+  "tags": ["通知", "会员服务", "Telegram"],
+  "min_app_version": "0.27.1",
+  "api_range": {"min": 3, "max": 3},
+  "extension_points": ["channel", "scheduler.task", "webui.panel"],
+  "permissions": {
+    "scheduler": true,
+    "members": true,
+    "network": ["api.telegram.org"]
+  },
+  "settings": {
+    "type": "object",
+    "required": ["bot_token"],
+    "properties": {
+      "bot_token": {
+        "type": "string",
+        "title": "Bot Token",
+        "description": "在 @BotFather 创建独立机器人后填写；不要与管理员机器人共用。",
+        "x-secret": true
+      },
+      "member_bindings": {
+        "type": "string",
+        "title": "成员绑定",
+        "description": "格式：Telegram用户ID=MediaClaw成员登录名；多项用英文逗号分隔。机器人会向未绑定用户显示其 ID。"
+      },
+      "poll_interval_seconds": {
+        "type": "integer",
+        "title": "轮询间隔（秒）",
+        "default": 5,
+        "minimum": 3,
+        "maximum": 60
+      },
+      "search_limit": {
+        "type": "integer",
+        "title": "单次搜索结果数",
+        "default": 5,
+        "minimum": 1,
+        "maximum": 8
+      }
+    }
+  },
+  "on_events": []
+}
