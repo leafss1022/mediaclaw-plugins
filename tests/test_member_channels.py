@@ -31,6 +31,10 @@ telegram_module = _load(
 wecom_module = _load(
     "market_enterprise_wecom", ROOT / "plugins" / "enterprise-wecom" / "main.py"
 )
+receiver_module = _load(
+    "market_one15_receiver",
+    ROOT / "plugins" / "one15-resource-receiver" / "main.py",
+)
 
 
 class FakeResponse:
@@ -117,6 +121,16 @@ class FakeTelegramHttp:
         return FakeResponse({"ok": True, "result": True})
 
 
+class FakeResourceDispatcher:
+    def __init__(self) -> None:
+        self.result = {"accepted": False, "items": []}
+        self.calls: list[tuple[str, str, str | None]] = []
+
+    async def dispatch_resource(self, text: str, *, source: str, source_ref: str | None = None):
+        self.calls.append((text, source, source_ref))
+        return self.result
+
+
 def _telegram(config: dict | None = None):
     plugin = telegram_module.MemberTelegramBot()
     http = FakeTelegramHttp()
@@ -128,6 +142,7 @@ def _telegram(config: dict | None = None):
         data=FakeData(),
         http=http,
         members=FakeMembers(),
+        netdisk=FakeResourceDispatcher(),
         logger=FakeLogger(),
     )
     plugin.host = host
@@ -193,6 +208,144 @@ async def test_telegram_poll_persists_offset_and_backs_off() -> None:
     await plugin._poll(force=True)
     assert host.data.store["state"]["status"] == "连接失败"
     assert plugin._failures == 1 and plugin._next_poll_at > 0
+
+
+@pytest.mark.asyncio
+async def test_telegram_hands_resource_to_shared_receiver() -> None:
+    plugin, host = _telegram()
+    host.netdisk.result = {
+        "accepted": True,
+        "items": [
+            {"type": "transfer", "status": "success", "message": "分享内容已提交转存"}
+        ],
+    }
+    await plugin._handle_update(
+        {
+            "update_id": 18,
+            "message": {
+                "chat": {"id": 99, "type": "private"},
+                "from": {"id": 100},
+                "text": "https://115.com/s/share-code?password=abcd",
+            },
+        }
+    )
+    assert host.netdisk.calls == [
+        (
+            "https://115.com/s/share-code?password=abcd",
+            "telegram",
+            "update:18",
+        )
+    ]
+    assert "分享内容已提交转存" in host.http.calls[-1][1]["text"]
+
+
+class FakeReceiverNetdisk:
+    def __init__(self) -> None:
+        self.offline_calls = []
+        self.share_calls = []
+        self.receiver = None
+
+    def register_resource_receiver(self, handler) -> None:
+        self.receiver = handler
+
+    async def enqueue_offline(self, account_id: int, urls: list[str], target: str):
+        self.offline_calls.append((account_id, urls, target))
+        return {"job_id": "job-offline", "created": True}
+
+    async def receive_share(
+        self,
+        account_id: int,
+        share_code: str,
+        receive_code: str,
+        target: str,
+        *,
+        sync_root_id: int | None = None,
+    ):
+        self.share_calls.append(
+            (account_id, share_code, receive_code, target, sync_root_id)
+        )
+        return {
+            "remote_id": "0",
+            "message": "分享内容已提交转存",
+            "sync_job_id": "job-sync" if sync_root_id else None,
+        }
+
+    async def list_accounts(self):
+        return [{"id": 3, "name": "115", "status": "active", "last_error": None}]
+
+    async def list_sync_roots(self, account_id: int):
+        assert account_id == 3
+        return [
+            {
+                "id": 8,
+                "account_id": 3,
+                "remote_root_id": "20",
+                "enabled": True,
+            }
+        ]
+
+
+def _receiver(config: dict | None = None):
+    plugin = receiver_module.One15ResourceReceiver()
+    netdisk = FakeReceiverNetdisk()
+    data = FakeData()
+    values = {
+        "account_id": "3",
+        "offline_target_remote_id": "https://115.com/?cid=10",
+        "transfer_target_remote_id": "20",
+        "auto_sync_after_transfer": True,
+        "sync_root_id": "8",
+    }
+    if config:
+        values.update(config)
+    plugin.host = SimpleNamespace(
+        config=SimpleNamespace(get=lambda: values),
+        data=data,
+        netdisk=netdisk,
+        logger=FakeLogger(),
+    )
+    return plugin, plugin.host
+
+
+def test_resource_receiver_parses_cids_and_share_password_aliases() -> None:
+    assert receiver_module.normalize_115_cid("https://115.com/?cid=123") == "123"
+    assert receiver_module.normalize_115_cid("parent_id=456") == "456"
+    parsed = receiver_module.parse_115_share_link(
+        "https://115.com/s/share-code?receiveCode=abcd"
+    )
+    assert parsed == {"share_code": "share-code", "receive_code": "abcd"}
+    links = receiver_module.extract_resource_links(
+        "ed2k://|file|Movie Name.mkv|10|HASH|/ https://115.com/s/code?pwd=1234。"
+    )
+    assert len(links) == 2
+
+
+@pytest.mark.asyncio
+async def test_resource_receiver_uses_host_jobs_and_is_idempotent() -> None:
+    plugin, host = _receiver()
+    plugin.on_enable()
+    text = (
+        "ed2k://|file|Movie.mkv|10|HASH|/\n"
+        "https://115.com/s/share-code?password=abcd"
+    )
+    first = await plugin.process_resource(text, "telegram", "update:12")
+    second = await plugin.process_resource(text, "telegram", "update:12")
+
+    assert first["accepted"] is True
+    assert [item["status"] for item in first["items"]] == ["success", "success"]
+    assert [item["status"] for item in second["items"]] == ["duplicate", "duplicate"]
+    assert host.netdisk.offline_calls == [
+        (3, ["ed2k://|file|Movie.mkv|10|HASH|/"], "10")
+    ]
+    assert host.netdisk.share_calls == [(3, "share-code", "abcd", "20", 8)]
+    assert "abcd" not in str(host.data.store)
+
+
+@pytest.mark.asyncio
+async def test_resource_receiver_run_validates_account_and_sync_root() -> None:
+    plugin, host = _receiver()
+    await plugin.run()
+    assert host.data.store["state"]["status"] == "配置正常"
 
 
 class FakeWeComHttp:

@@ -1,0 +1,50 @@
+{
+  "id": "one15-resource-receiver",
+  "name": "115资源接收",
+  "description": "统一设置离线与转存目录，供内置 AI 助手、Telegram Bot 等资源入口共用。",
+  "author": "MediaClaw",
+  "license": "MIT",
+  "version": "1.0.0",
+  "entry": "main.py",
+  "category": "automation",
+  "icon": null,
+  "tags": ["资源自动化", "115", "离线下载", "分享转存"],
+  "min_app_version": "0.27.1",
+  "api_range": {"min": 3, "max": 3},
+  "extension_points": ["webui.panel", "agent.tool"],
+  "permissions": {
+    "netdisk": true
+  },
+  "settings": {
+    "type": "object",
+    "required": ["account_id", "offline_target_remote_id", "transfer_target_remote_id"],
+    "properties": {
+      "account_id": {
+        "type": "string",
+        "title": "115账号 ID",
+        "description": "填写 MediaClaw 网盘工具中已认证的 115 账号 ID。"
+      },
+      "offline_target_remote_id": {
+        "type": "string",
+        "title": "离线下载目录",
+        "description": "填写目录 CID，或粘贴包含 cid=数字 的 115 目录地址。"
+      },
+      "transfer_target_remote_id": {
+        "type": "string",
+        "title": "分享转存目录",
+        "description": "填写目录 CID，或粘贴包含 cid=数字 的 115 目录地址。"
+      },
+      "auto_sync_after_transfer": {
+        "type": "boolean",
+        "title": "转存后增量同步 STRM",
+        "default": false
+      },
+      "sync_root_id": {
+        "type": "string",
+        "title": "STRM 同步根 ID",
+        "description": "开启转存后同步时填写；同步根必须属于同一账号且远程根与转存目录一致。"
+      }
+    }
+  },
+  "on_events": []
+}
