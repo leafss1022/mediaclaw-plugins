@@ -39,10 +39,35 @@
       "max": 3
     },
     "history": {
+      "v1.1.0": "支持已绑定成员直接提交 ED2K 与 115 分享链接，复用115资源接收统一配置，并在外部操作前持久化轮询 offset 防止重复提交。",
       "v1.0.0": "支持成员绑定、TMDB 影视搜索、创建订阅、查询入库进度、搜索限流和轮询失败退避。"
     },
-    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-member-telegram-bot-1.0.0/member-telegram-bot-1.0.0.zip",
-    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-member-telegram-bot-1.0.0/member-telegram-bot-1.0.0-manifest.json",
+    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-member-telegram-bot-1.1.0/member-telegram-bot-1.1.0.zip",
+    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-member-telegram-bot-1.1.0/member-telegram-bot-1.1.0-manifest.json",
+    "sig_url": ""
+  },
+  "one15-resource-receiver": {
+    "name": "115资源接收",
+    "description": "统一设置离线与转存目录，供内置 AI 助手、Telegram Bot 等资源入口共用。",
+    "labels": [
+      "资源自动化",
+      "115",
+      "离线下载",
+      "分享转存"
+    ],
+    "version": "1.1.0",
+    "icon": "",
+    "author": "MediaClaw",
+    "min_app_version": "0.27.1",
+    "api_range": {
+      "min": 3,
+      "max": 3
+    },
+    "history": {
+      "v1.0.0": "支持统一账号与目录配置、ED2K 离线下载、115 分享转存、Telegram/内置 AI 共用入口、消息幂等和可选 STRM 增量同步。"
+    },
+    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-one15-resource-receiver-1.0.0/one15-resource-receiver-1.0.0.zip",
+    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-one15-resource-receiver-1.0.0/one15-resource-receiver-1.0.0-manifest.json",
     "sig_url": ""
   },
   "douban-coming-notice": {
