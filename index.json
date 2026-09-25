@@ -1,4 +1,50 @@
 {
+  "enterprise-wecom": {
+    "name": "企业微信",
+    "description": "通过企业微信自建应用通知管理员，并使用验签回调菜单安全执行 MediaClaw 搜索与订阅。",
+    "labels": [
+      "通知",
+      "企业微信",
+      "远程控制"
+    ],
+    "version": "1.0.0",
+    "icon": "",
+    "author": "MediaClaw",
+    "min_app_version": "0.27.1",
+    "api_range": {
+      "min": 3,
+      "max": 3
+    },
+    "history": {
+      "v1.0.0": "支持企业微信自建应用通知、Token 缓存、应用菜单、安全加密回调、管理员白名单及远程搜索订阅。"
+    },
+    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-enterprise-wecom-1.0.0/enterprise-wecom-1.0.0.zip",
+    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-enterprise-wecom-1.0.0/enterprise-wecom-1.0.0-manifest.json",
+    "sig_url": ""
+  },
+  "member-telegram-bot": {
+    "name": "会员 Telegram 机器人",
+    "description": "让已授权成员在 Telegram 中搜索影视、创建订阅并查询处理进度。",
+    "labels": [
+      "通知",
+      "会员服务",
+      "Telegram"
+    ],
+    "version": "1.0.0",
+    "icon": "",
+    "author": "MediaClaw",
+    "min_app_version": "0.27.1",
+    "api_range": {
+      "min": 3,
+      "max": 3
+    },
+    "history": {
+      "v1.0.0": "支持成员绑定、TMDB 影视搜索、创建订阅、查询入库进度、搜索限流和轮询失败退避。"
+    },
+    "url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-member-telegram-bot-1.0.0/member-telegram-bot-1.0.0.zip",
+    "manifest_url": "https://github.com/leafss1022/mediaclaw-plugins/releases/download/plugin-member-telegram-bot-1.0.0/member-telegram-bot-1.0.0-manifest.json",
+    "sig_url": ""
+  },
   "douban-coming-notice": {
     "name": "豆瓣将映魔改版",
     "description": "监控豆瓣即将开播电视剧，开播前发送提醒，临近开播自动建订阅。",
