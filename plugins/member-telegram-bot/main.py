@@ -120,6 +120,8 @@ class MemberTelegramBot(PluginBase):
             offset = int(state.get("offset") or 0)
             for update in updates if isinstance(updates, list) else []:
                 offset = max(offset, int(update.get("update_id") or 0) + 1)
+                # 先持久化 offset 再执行 115 等外部动作，避免轮询重试重复转存。
+                self._write_state(offset=offset)
                 try:
                     await self._handle_update(update)
                 except Exception as exc:  # noqa: BLE001 -- 单条坏消息不能阻断后续轮询
@@ -164,6 +166,12 @@ class MemberTelegramBot(PluginBase):
             )
             return
         text = str(message.get("text") or "").strip()
+        if text and await self._dispatch_resource(
+            chat_id,
+            text,
+            source_ref=f"update:{int(update.get('update_id') or 0)}",
+        ):
+            return
         command, _, argument = text.partition(" ")
         command = command.split("@", 1)[0].lower()
         if command in {"/start", "/help"} or text == "帮助":
@@ -173,7 +181,8 @@ class MemberTelegramBot(PluginBase):
                 "/search 片名 - 搜索影视\n"
                 "/request 片名 - 搜索后选择订阅\n"
                 "/my - 查看我的订阅\n"
-                "/account - 查看会员信息",
+                "/account - 查看会员信息\n"
+                "也可以直接发送 ED2K 或 115 分享链接。",
             )
         elif command in {"/search", "/request"}:
             if not argument.strip():
@@ -194,6 +203,42 @@ class MemberTelegramBot(PluginBase):
             await self._send(chat_id, "请发送 <code>/search 片名</code>，例如：<code>/search 星际穿越</code>")
         elif text:
             await self._search(chat_id, member, text)
+
+    async def _dispatch_resource(
+        self, chat_id: str, text: str, *, source_ref: str
+    ) -> bool:
+        """把疑似资源交给统一接收器；普通影视名称继续走原搜索流程。"""
+        if self.host is None:
+            return False
+        looks_like_resource = "ed2k://" in text.lower() or any(
+            marker in text.lower()
+            for marker in ("115.com/", "115cdn.com/", "anxia.com/", "115://")
+        )
+        try:
+            result = await self.host.netdisk.dispatch_resource(
+                text,
+                source="telegram",
+                source_ref=source_ref,
+            )
+        except RuntimeError as exc:
+            if not looks_like_resource:
+                return False
+            await self._send(chat_id, f"资源接收不可用：{html.escape(str(exc))}")
+            return True
+        except Exception as exc:  # noqa: BLE001 -- 资源错误需要回传给当前成员
+            await self._send(chat_id, f"资源接收失败：{html.escape(str(exc))}")
+            return True
+        if not result.get("accepted"):
+            return False
+        lines = ["<b>资源接收结果</b>"]
+        labels = {"offline": "离线下载", "transfer": "分享转存"}
+        for item in result.get("items") or []:
+            label = labels.get(item.get("type"), "资源")
+            lines.append(
+                f"• {label}：{html.escape(str(item.get('message') or item.get('status') or '-'))}"
+            )
+        await self._send(chat_id, "\n".join(lines))
+        return True
 
     async def _handle_callback(self, callback: dict) -> None:
         sender = callback.get("from") or {}

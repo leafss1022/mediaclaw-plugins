@@ -4,7 +4,7 @@
   "description": "让已授权成员在 Telegram 中搜索影视、创建订阅并查询处理进度。",
   "author": "MediaClaw",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "entry": "main.py",
   "category": "channel",
   "icon": null,
@@ -15,6 +15,7 @@
   "permissions": {
     "scheduler": true,
     "members": true,
+    "netdisk": true,
     "network": ["api.telegram.org"]
   },
   "settings": {
