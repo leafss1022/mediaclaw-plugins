@@ -1,0 +1,87 @@
+{
+  "id": "enterprise-wecom",
+  "name": "企业微信",
+  "description": "通过企业微信自建应用通知管理员，并使用验签回调菜单安全执行 MediaClaw 搜索与订阅。",
+  "author": "MediaClaw",
+  "license": "MIT",
+  "version": "1.0.0",
+  "entry": "main.py",
+  "category": "channel",
+  "icon": null,
+  "tags": ["通知", "企业微信", "远程控制"],
+  "min_app_version": "0.27.1",
+  "api_range": {"min": 3, "max": 3},
+  "extension_points": ["channel", "webui.panel"],
+  "permissions": {
+    "members": true,
+    "events": ["*"],
+    "network": ["qyapi.weixin.qq.com"]
+  },
+  "settings": {
+    "type": "object",
+    "required": ["corp_id", "agent_id", "admin_users"],
+    "properties": {
+      "corp_id": {
+        "type": "string",
+        "title": "企业 ID",
+        "description": "企业微信管理后台“我的企业”中的 CorpID。"
+      },
+      "agent_id": {
+        "type": "string",
+        "title": "应用 ID",
+        "description": "自建应用详情中的 AgentId，只能填写数字。"
+      },
+      "corp_secret": {
+        "type": "string",
+        "title": "应用 Secret",
+        "description": "自建应用 Secret；与手动 Access Token 二选一。",
+        "x-secret": true
+      },
+      "access_token": {
+        "type": "string",
+        "title": "Access Token",
+        "description": "可选。填写后优先使用，留空则由 CorpID + Secret 自动获取并缓存。",
+        "x-secret": true
+      },
+      "admin_users": {
+        "type": "string",
+        "title": "管理员用户 ID",
+        "description": "企业微信成员 UserID，多项用英文逗号分隔；通知与远程控制只允许这些用户。"
+      },
+      "member_bindings": {
+        "type": "string",
+        "title": "成员绑定",
+        "description": "格式：企业微信UserID=MediaClaw成员登录名；多项用英文逗号分隔。"
+      },
+      "event_patterns": {
+        "type": "string",
+        "title": "通知事件",
+        "description": "插件事件匹配模式，多项用英文逗号分隔，例如 subscription.*,playback.*；* 表示全部。",
+        "default": "subscription.*"
+      },
+      "public_base_url": {
+        "type": "string",
+        "title": "外部访问地址",
+        "description": "例如 https://media.example.com，用于生成企业微信回调地址。"
+      },
+      "callback_token": {
+        "type": "string",
+        "title": "回调 Token",
+        "description": "与企业微信应用“接收消息”页面填写的 Token 完全一致。",
+        "x-secret": true
+      },
+      "encoding_aes_key": {
+        "type": "string",
+        "title": "消息加密密钥",
+        "description": "企业微信生成的 43 位 EncodingAESKey。",
+        "x-secret": true
+      },
+      "control_enabled": {
+        "type": "boolean",
+        "title": "启用远程控制",
+        "default": false
+      }
+    }
+  },
+  "on_events": ["*"]
+}
