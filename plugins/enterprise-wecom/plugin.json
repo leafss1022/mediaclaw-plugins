@@ -1,25 +1,47 @@
 {
   "id": "enterprise-wecom",
   "name": "企业微信",
-  "description": "通过企业微信自建应用通知管理员，并使用验签回调菜单安全执行 MediaClaw 搜索与订阅。",
+  "description": "企业微信图文通知与控制台：影视选片、下载与入库横幅通知、分组菜单、回调去重和收发记录。",
   "author": "MediaClaw",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "entry": "main.py",
   "category": "channel",
   "icon": null,
-  "tags": ["通知", "企业微信", "远程控制"],
-  "min_app_version": "0.27.1",
-  "api_range": {"min": 3, "max": 3},
-  "extension_points": ["channel", "webui.panel"],
+  "tags": [
+    "通知",
+    "企业微信",
+    "远程控制"
+  ],
+  "min_app_version": "0.29.1",
+  "api_range": {
+    "min": 3,
+    "max": 3
+  },
+  "extension_points": [
+    "channel",
+    "webui.panel"
+  ],
   "permissions": {
     "members": true,
-    "events": ["*"],
-    "network": ["qyapi.weixin.qq.com"]
+    "events": [
+      "*"
+    ],
+    "network": [
+      "qyapi.weixin.qq.com"
+    ],
+    "control": true,
+    "network_config": [
+      "proxy_url"
+    ]
   },
   "settings": {
     "type": "object",
-    "required": ["corp_id", "agent_id", "admin_users"],
+    "required": [
+      "corp_id",
+      "agent_id",
+      "admin_users"
+    ],
     "properties": {
       "corp_id": {
         "type": "string",
@@ -46,7 +68,7 @@
       "admin_users": {
         "type": "string",
         "title": "管理员用户 ID",
-        "description": "企业微信成员 UserID，多项用英文逗号分隔；通知与远程控制只允许这些用户。"
+        "description": "通讯录 UserID，支持换行、逗号或竖线。仅白名单用户能接收通知及操作控制台。"
       },
       "member_bindings": {
         "type": "string",
@@ -56,7 +78,7 @@
       "event_patterns": {
         "type": "string",
         "title": "通知事件",
-        "description": "插件事件匹配模式，多项用英文逗号分隔，例如 subscription.*,playback.*；* 表示全部。",
+        "description": "事件匹配模式，支持逗号分隔及 subscription.* 通配符；可在配置页选择通知类别。",
         "default": "subscription.*"
       },
       "public_base_url": {
@@ -80,8 +102,25 @@
         "type": "boolean",
         "title": "启用远程控制",
         "default": false
+      },
+      "notifications_enabled": {
+        "type": "boolean",
+        "title": "启用事件通知",
+        "default": true
+      },
+      "proxy_url": {
+        "type": "string",
+        "title": "API 转发地址",
+        "description": "可选，留空直连企业微信。仅填写自己信任的 HTTPS API 转发地址，应用凭据会经过该服务。"
+      },
+      "filter_keywords": {
+        "type": "string",
+        "title": "通知过滤关键词",
+        "description": "每行一个关键词，命中标题或摘要则不发送；不影响远程指令回复。"
       }
     }
   },
-  "on_events": ["*"]
+  "on_events": [
+    "*"
+  ]
 }

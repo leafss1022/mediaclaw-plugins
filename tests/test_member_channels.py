@@ -7,6 +7,7 @@ import hashlib
 import importlib.util
 import os
 import struct
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -126,7 +127,9 @@ class FakeResourceDispatcher:
         self.result = {"accepted": False, "items": []}
         self.calls: list[tuple[str, str, str | None]] = []
 
-    async def dispatch_resource(self, text: str, *, source: str, source_ref: str | None = None):
+    async def dispatch_resource(
+        self, text: str, *, source: str, source_ref: str | None = None
+    ):
         self.calls.append((text, source, source_ref))
         return self.result
 
@@ -136,8 +139,7 @@ def _telegram(config: dict | None = None):
     http = FakeTelegramHttp()
     host = SimpleNamespace(
         config=SimpleNamespace(
-            get=lambda: config
-            or {"bot_token": "token", "member_bindings": "100=alice"}
+            get=lambda: config or {"bot_token": "token", "member_bindings": "100=alice"}
         ),
         data=FakeData(),
         http=http,
@@ -325,8 +327,7 @@ async def test_resource_receiver_uses_host_jobs_and_is_idempotent() -> None:
     plugin, host = _receiver()
     plugin.on_enable()
     text = (
-        "ed2k://|file|Movie.mkv|10|HASH|/\n"
-        "https://115.com/s/share-code?password=abcd"
+        "ed2k://|file|Movie.mkv|10|HASH|/\nhttps://115.com/s/share-code?password=abcd"
     )
     first = await plugin.process_resource(text, "telegram", "update:12")
     second = await plugin.process_resource(text, "telegram", "update:12")
@@ -357,7 +358,11 @@ class FakeWeComHttp:
     async def get(self, _url: str, **_kwargs):
         self.get_calls += 1
         return FakeResponse(
-            {"errcode": 0, "access_token": f"token-{self.get_calls}", "expires_in": 7200}
+            {
+                "errcode": 0,
+                "access_token": f"token-{self.get_calls}",
+                "expires_in": 7200,
+            }
         )
 
     async def post(self, url: str, **kwargs):
@@ -409,7 +414,12 @@ async def test_wecom_token_cache_and_single_expiry_retry() -> None:
 
 def _encrypt_wecom(message: str, corp_id: str, encoding_aes_key: str) -> str:
     key = base64.b64decode(encoding_aes_key + "=")
-    raw = os.urandom(16) + struct.pack("!I", len(message.encode())) + message.encode() + corp_id.encode()
+    raw = (
+        os.urandom(16)
+        + struct.pack("!I", len(message.encode()))
+        + message.encode()
+        + corp_id.encode()
+    )
     padding = 32 - len(raw) % 32
     padded = raw + bytes([padding]) * padding
     encryptor = Cipher(algorithms.AES(key), modes.CBC(key[:16])).encryptor()
@@ -421,9 +431,11 @@ async def test_wecom_callback_verifies_and_decrypts_echo() -> None:
     plugin, host = _wecom()
     config = host.config.get()
     encrypted = _encrypt_wecom("echo-ok", config["corp_id"], config["encoding_aes_key"])
-    timestamp, nonce = "1700000000", "nonce"
+    timestamp, nonce = str(int(time.time())), "nonce"
     signature = hashlib.sha1(
-        "".join(sorted([config["callback_token"], timestamp, nonce, encrypted])).encode()
+        "".join(
+            sorted([config["callback_token"], timestamp, nonce, encrypted])
+        ).encode()
     ).hexdigest()
     response = await plugin.handle_callback(
         PluginCallbackRequest(
@@ -462,9 +474,11 @@ async def test_wecom_callback_handles_encrypted_admin_message() -> None:
         "<Content><![CDATA[帮助]]></Content></xml>"
     )
     encrypted = _encrypt_wecom(message, config["corp_id"], config["encoding_aes_key"])
-    timestamp, nonce = "1700000001", "nonce-2"
+    timestamp, nonce = str(int(time.time())), "nonce-2"
     signature = hashlib.sha1(
-        "".join(sorted([config["callback_token"], timestamp, nonce, encrypted])).encode()
+        "".join(
+            sorted([config["callback_token"], timestamp, nonce, encrypted])
+        ).encode()
     ).hexdigest()
     body = f"<xml><Encrypt><![CDATA[{encrypted}]]></Encrypt></xml>".encode()
     response = await plugin.handle_callback(
@@ -477,8 +491,12 @@ async def test_wecom_callback_handles_encrypted_admin_message() -> None:
         )
     )
     assert response.status_code == 200 and response.body == "success"
+    await plugin._worker
     assert host.http.post_calls[-1][1]["json"]["touser"] == "admin"
-    assert "搜索 片名" in host.http.post_calls[-1][1]["json"]["text"]["content"]
+    assert (
+        "搜索 片名"
+        in host.http.post_calls[-1][1]["json"]["template_card"]["sub_title_text"]
+    )
 
 
 @pytest.mark.asyncio
