@@ -15,12 +15,23 @@ import xml.etree.ElementTree as ET
 from mediaclaw_plugins.sdk import PluginBase
 
 _DOUBAN_ID_RE = re.compile(r"/subject/(\d+)")
-_WISH_RE = re.compile(r"想看人数[：:\s]*([\d,]+)")
+_WISH_RE = re.compile(r"想看(?:人数)?[：:\s]*([\d,]+)")
 _YEAR_RE = re.compile(r"\((\d{4})\)")
 _SEASON_RE = re.compile(r"(?:第\s*([一二三四五六七八九十百\d]+)\s*季|[Ss](\d{1,2}))")
 
 
-_CN_NUM = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
+_CN_NUM = {
+    "一": 1,
+    "二": 2,
+    "三": 3,
+    "四": 4,
+    "五": 5,
+    "六": 6,
+    "七": 7,
+    "八": 8,
+    "九": 9,
+    "十": 10,
+}
 
 
 def _cn_to_int(value: str) -> int:
@@ -101,6 +112,23 @@ class DoubanComingNotice(PluginBase):
         self.host.data.write_json("history", kept)
         return True
 
+    def clear_page(self) -> bool:
+        """清空历史与提醒去重记录，供插件页面的“清理数据”操作调用。"""
+        if self.host is None:
+            return False
+        history = self.host.data.read_json("history") or []
+        notify_history = self.host.data.read_json("notify_history") or []
+        if not history and not notify_history:
+            return False
+        self.host.data.write_json("history", [])
+        self.host.data.write_json("notify_history", [])
+        self.host.logger.info(
+            "豆瓣将映数据已清理：历史 %d 条、提醒 %d 条",
+            len(history),
+            len(notify_history),
+        )
+        return True
+
     async def refresh(self) -> None:
         if self.host is None:
             return
@@ -118,13 +146,17 @@ class DoubanComingNotice(PluginBase):
                 f"{rsshub}/douban/tv/coming?sort={sort_by}"
             )
             items = self._parse_rss(resp.text)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 -- 网络与插件门面异常统一记录后退出。
             self.host.logger.error("抓取/解析豆瓣将映 RSS 失败：%s", exc)
             return
 
         history = self.host.data.read_json("history") or []
         notify_history = self.host.data.read_json("notify_history") or []
-        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now = (
+            datetime.datetime.now(datetime.UTC)
+            .astimezone()
+            .strftime("%Y-%m-%d %H:%M:%S")
+        )
 
         for raw in items[:count]:
             try:
@@ -138,7 +170,7 @@ class DoubanComingNotice(PluginBase):
                     notify_history,
                     now,
                 )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 -- 单条失败不阻断其余条目。
                 self.host.logger.warning("处理条目 %s 失败：%s", raw.get("title"), exc)
 
         self.host.data.write_json("history", history)
@@ -178,10 +210,19 @@ class DoubanComingNotice(PluginBase):
         air_date = await self.host.media.tv_air_date(media["tmdb_id"], season=season)
         days = self._days_until(air_date)
 
-        unique = f"doubancomingnotice: {title} (DB:{raw.get('douban_id')})"
-        history_item = next((h for h in history if h.get("unique") == unique), None)
+        douban_id = raw.get("douban_id")
+        unique = f"doubancomingnotice:{douban_id or media['tmdb_id']}"
+        history_item = next(
+            (
+                h
+                for h in history
+                if h.get("unique") == unique
+                or (douban_id and h.get("douban_id") == douban_id)
+            ),
+            None,
+        )
         subscribed = bool(history_item.get("subscribed")) if history_item else False
-        air_notified = False
+        air_notified = bool(history_item.get("air_notify_sent")) if history_item else False
 
         if (
             not subscribed
@@ -190,6 +231,7 @@ class DoubanComingNotice(PluginBase):
         ):
             in_library = await self.host.library.library_exists(media["tmdb_id"])
             already = await self.host.subscription.subscription_exists(media["tmdb_id"])
+            subscribed = bool(already)
             if not in_library and not already:
                 try:
                     sub = await self.host.subscription.subscription_create(
@@ -199,12 +241,15 @@ class DoubanComingNotice(PluginBase):
                     )
                     subscribed = sub is not None
                     self.host.logger.info("已自动订阅：%s（S%d）", media["title"], season)
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001 -- 订阅失败不阻断提醒与记录。
                     self.host.logger.warning("自动订阅失败 %s：%s", title, exc)
 
         if notify_before_air and days is not None and 0 <= days * 24 <= notify_hours:
             notify_key = f"air_notify:{raw.get('douban_id') or title}:{air_date or 'unknown'}"
-            if notify_key not in {n.get("unique") for n in notify_history}:
+            notified_keys = {n.get("unique") for n in notify_history}
+            if notify_key in notified_keys:
+                air_notified = True
+            else:
                 text = (
                     f"类型：电视剧\n开播时间：{air_date or '-'}\n"
                     f"想看人数：{wish_count}\n"
@@ -217,7 +262,7 @@ class DoubanComingNotice(PluginBase):
                         {"unique": notify_key, "title": media["title"], "notified_at": now}
                     )
                     air_notified = True
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001 -- 通知失败仍需保存条目状态。
                     self.host.logger.warning("开播提醒发送失败 %s：%s", title, exc)
 
         entry = {
@@ -272,7 +317,8 @@ class DoubanComingNotice(PluginBase):
                     except ValueError:
                         season = 1
             # 识别用基础标题：去掉「第X季」/「Sxx」后缀，避免 TMDB 搜索带季名
-            base_title = _SEASON_RE.sub("", title).strip()
+            base_title = _YEAR_RE.sub("", _SEASON_RE.sub("", title))
+            base_title = re.sub(r"\s+", " ", base_title).strip(" -–—")
             items.append(
                 {
                     "title": base_title or title.strip(),
@@ -285,31 +331,6 @@ class DoubanComingNotice(PluginBase):
                 }
             )
         return items
-        for node in root.iter("item"):
-            title = node.findtext("title") or ""
-            link = node.findtext("link") or node.findtext("guid") or ""
-            description = node.findtext("description") or ""
-            douban_match = _DOUBAN_ID_RE.search(link)
-            wish_match = _WISH_RE.search(description)
-            year_match = _YEAR_RE.search(title)
-            season_match = _SEASON_RE.search(title)
-            wish_count = 0
-            if wish_match:
-                try:
-                    wish_count = int(wish_match.group(1).replace(",", ""))
-                except ValueError:
-                    wish_count = 0
-            items.append(
-                {
-                    "title": title.strip(),
-                    "douban_id": douban_match.group(1) if douban_match else None,
-                    "description": description,
-                    "wish_count": wish_count,
-                    "year": int(year_match.group(1)) if year_match else None,
-                    "season": int(season_match.group(1)) if season_match else 1,
-                }
-            )
-        return items
 
     @staticmethod
     def _days_until(air_date: str | None) -> int | None:
@@ -319,7 +340,8 @@ class DoubanComingNotice(PluginBase):
             target = datetime.date.fromisoformat(air_date)
         except ValueError:
             return None
-        return (target - datetime.date.today()).days
+        today = datetime.datetime.now(datetime.UTC).astimezone().date()
+        return (target - today).days
 
 
 plugin = DoubanComingNotice()

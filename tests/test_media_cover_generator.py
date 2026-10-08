@@ -88,3 +88,15 @@ def test_clear_records_does_not_call_library_operations():
     assert plugin.clear_page() is True
     assert store["history"] == []
     assert len(calls) == 2
+
+
+def test_page_uses_mediaclaw_builtin_preview_images_without_mp_copy():
+    plugin, _store, _calls = instance()
+
+    page = plugin.page()
+    rendered = str(page)
+
+    for index in range(1, 5):
+        assert f"/images/library-covers/static_{index}.webp" in rendered
+    assert "MoviePilot" not in rendered
+    assert " MP " not in f" {rendered} "
